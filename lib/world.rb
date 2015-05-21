@@ -43,14 +43,8 @@ class Being < Gosu::Image
 end
 
 class Human < Being
-  CONTACT = 8
-
   def initialize board
     super board, 'human.png'
-  end
-
-  def mutate
-    # oh noooooo!
   end
 end
 
@@ -60,32 +54,47 @@ class Zombi < Being
   end
 end
 
-class WhackARuby < Gosu::Window
+class GameOfDead < Gosu::Window
+  SCREEN_WIDE = 600
+  SCREEN_HIGH = 700
+  SPREAD_RADIUS = 8
+
   def initialize
-    super 200, 200, false
-    self.caption = "Game of Undead"
-    @humans = Array.new(20){ Human.new(self) }
+    super SCREEN_WIDE, SCREEN_HIGH, false
+    self.caption = "Contagion!!"
+    @humans = Array.new(200){ Human.new(self) }
     @zombis = Array.new(1) { Zombi.new(self) }
- end
+    @go_on = true
+  end
 
   def update
+    if @go_on
+      tick     # everybody runs!
+      tock     # some people become zombies
+    end
+  end
+
+  def tick
     @humans.each(&:update)
     @zombis.each(&:update)
+  end
 
+  def tock
     new_zombis, survivors = @humans.partition do |h|
-      @zombis.find{|z| Gosu.distance(*h.position, *z.position) < Human::CONTACT}
+      @zombis.find{|z| Gosu.distance(*h.position, *z.position) < SPREAD_RADIUS}
     end
+
     @humans = survivors
     @zombis += new_zombis.map { |z| Zombi.new(self, {x:z.x, y:z.y, a:z.a}) }
+
+    @go_on = false if @humans.none?
   end
 
   def draw
-    c = Gosu::Color::NONE
-    #draw_quad(0,0,c,800,0,c,800,600,c,0,600,c)
     @humans.each(&:draw)
     @zombis.each(&:draw)
   end
 end
 
-window = WhackARuby.new
+window = GameOfDead.new
 window.show
