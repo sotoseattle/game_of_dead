@@ -14,27 +14,26 @@ class Being < Gosu::Image
     @high = 8
   end
 
-  def compute_speed
-    @a = @a % 360
-    rads = @a * Math::PI / 180.0
-    @velo_x = VELO * Math.cos(rads)
-    @velo_y = VELO * Math.sin(rads)
-  end
-
   def update
-    compute_speed
-    new_x = @x + @velo_x
-    new_y = @y + @velo_y
+    velo = compute_speed
+    new_x = @x + velo[:x]
+    new_y = @y + velo[:y]
 
     @a = 180-@a if new_x + @wide/2 > @board.width  || new_x - @wide/2 < 0
     @a = 360-@a if new_y + @high/2 > @board.height || new_y - @high/2 < 0
 
-    @x += @velo_x
-    @y += @velo_y
+    @x += velo[:x]
+    @y += velo[:y]
   end
 
   def draw
     super(@x - @wide/2, @y - @high/2, 1)
+  end
+
+  def compute_speed
+    @a = @a % 360
+    rads = @a * Math::PI / 180.0
+    { x: VELO * Math.cos(rads), y: VELO * Math.sin(rads) }
   end
 
   def position
@@ -52,6 +51,9 @@ class Zombi < Being
   def initialize board, opts = {}
     super board, 'zombi.png', opts
   end
+
+  def something
+  end
 end
 
 class GameOfDead < Gosu::Window
@@ -62,7 +64,7 @@ class GameOfDead < Gosu::Window
   def initialize
     super SCREEN_WIDE, SCREEN_HIGH, false
     self.caption = "Contagion!!"
-    @humans = Array.new(200){ Human.new(self) }
+    @humans = Array.new(5){ Human.new(self) }
     @zombis = Array.new(1) { Zombi.new(self) }
     @go_on = true
   end
