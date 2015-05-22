@@ -37,12 +37,15 @@ class Being < Gosu::Image
 end
 
 class Human < Being
+  attr_reader :infected
+
   OBLIVI = 2
   FREAKY = 4
   VISUAL_RADIUS = 25
 
   def initialize board
     super board, 'lib/human.png'
+    @infected = false
   end
 
   def update
@@ -53,6 +56,10 @@ class Human < Being
       @speed = Human::OBLIVI
     end
     super
+  end
+
+  def bitten
+    @infected = true
   end
 
   def turn_undead
@@ -71,6 +78,7 @@ class Zombi < Being
   OBLIVI = 1
   FREAKY = 3
   VISUAL_RADIUS = 50
+  INFECT_DIST = 8
 
   def initialize board, opts = {}
     super board, 'lib/zombi.png', opts
@@ -90,17 +98,20 @@ class Zombi < Being
     distance, snacks = @board.humans
                              .group_by{ |h| Gosu.distance(x, y, h.x, h.y) }
                              .min_by{ |distance, human_group| distance }
-    distance < VISUAL_RADIUS ? snacks.first : nil
+    return nil unless distance || distance < VISUAL_RADIUS
+
+    target = snacks.first
+    target.bitten if distance < INFECT_DIST
+    target
   end
 end
 
 class GameOfDead < Gosu::Window
+  attr_reader :humans, :zombis
+
   DEFAULT_SETUP = { z: 1, h: 1 }
   SCREEN_WIDE = 500
   SCREEN_HIGH = 600
-  INFECT_DIST = 8
-
-  attr_reader :humans, :zombis
 
   def initialize opts={}
     super SCREEN_WIDE, SCREEN_HIGH, false
@@ -111,22 +122,11 @@ class GameOfDead < Gosu::Window
   end
 
   def update
-    tick     # everybody runs!
-    tock     # some people were born to turn (into zombies)
-  end
-
-  def tick
     @humans.each(&:update)
     @zombis.each(&:update)
-  end
 
-  def tock
-    new_zombis, survivors = @humans.partition do |h|
-      @zombis.find{ |z| Gosu.distance(h.x, h.y, z.x, z.y) < INFECT_DIST }
-    end
-
-    @humans = survivors
-    @zombis += new_zombis.map(&:turn_undead)
+    bitten, @humans = @humans.partition(&:infected)
+    @zombis += bitten.map &:turn_undead
   end
 
   def draw
