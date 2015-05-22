@@ -35,10 +35,6 @@ class Being < Gosu::Image
     rads = @a * Math::PI / 180.0
     { x: VELO * Math.cos(rads), y: VELO * Math.sin(rads) }
   end
-
-  def position
-    [@x, @y]
-  end
 end
 
 class Human < Being
@@ -48,11 +44,23 @@ class Human < Being
 end
 
 class Zombi < Being
+  VISUAL_RADIUS = 20
+
   def initialize board, opts = {}
     super board, 'zombi.png', opts
   end
 
-  def something
+  def update
+    target = closest_prey
+    rads = Math.atan2((target.y - y), (target.x - x))
+    @a = (rads * 180 / Math::PI) % 360
+    super
+  end
+
+  def closest_prey
+    @board.humans
+          .group_by { |h| Gosu.distance(x, y, h.x, h.y) }
+          .min_by{|k,v| k}[1].first
   end
 end
 
@@ -61,10 +69,12 @@ class GameOfDead < Gosu::Window
   SCREEN_HIGH = 700
   SPREAD_RADIUS = 8
 
+  attr_reader :humans, :zombis
+
   def initialize
     super SCREEN_WIDE, SCREEN_HIGH, false
     self.caption = "Contagion!!"
-    @humans = Array.new(5){ Human.new(self) }
+    @humans = Array.new(200){ Human.new(self) }
     @zombis = Array.new(1) { Zombi.new(self) }
     @go_on = true
   end
@@ -83,7 +93,7 @@ class GameOfDead < Gosu::Window
 
   def tock
     new_zombis, survivors = @humans.partition do |h|
-      @zombis.find{|z| Gosu.distance(*h.position, *z.position) < SPREAD_RADIUS}
+      @zombis.find{|z| Gosu.distance(h.x, h.y, z.x, z.y) < SPREAD_RADIUS}
     end
 
     @humans = survivors
