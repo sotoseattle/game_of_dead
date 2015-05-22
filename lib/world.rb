@@ -2,7 +2,6 @@ require 'gosu'
 
 class Being < Gosu::Image
   attr_reader :x, :y, :a
-  VELO = 4
 
   def initialize board, file, opts={}
     super board, file, false
@@ -33,12 +32,13 @@ class Being < Gosu::Image
   def compute_speed
     @a = @a % 360
     rads = @a * Math::PI / 180.0
-    { x: VELO * Math.cos(rads), y: VELO * Math.sin(rads) }
+    { x: @speed * Math.cos(rads), y: @speed * Math.sin(rads) }
   end
 end
 
 class Human < Being
   def initialize board
+    @speed = 4
     super board, 'human.png'
   end
 end
@@ -47,6 +47,7 @@ class Zombi < Being
   VISUAL_RADIUS = 20
 
   def initialize board, opts = {}
+    @speed = 2
     super board, 'zombi.png', opts
   end
 
