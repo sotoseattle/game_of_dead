@@ -1,0 +1,40 @@
+
+STEPS:
+
+### Step 0: Install Gosu or RSDL/ZenThingy
+
+### Step 1: Basic movement of Being
+- two dimensional linear movement in x, y
+- velocity is added to location at every update of the clock
+- consider always differentiating between x and y (for velocity too)
+- randomize the location and direction of the thingies visualized
+- [optional] consider the possibility of using angles (as in vectors)
+
+By the end you should have a box full of things shooting off out of the screen in linear fashion
+
+### Step 2: Enclose in world and make it bounce the walls
+- a being cannot pass beyond the walls of the defined world
+- [optional] consider the angle at which it bounces off
+
+By the end you should have a box full of bouncing thingies (like browning motion without the collisions)
+
+### Step 3: Differentiate between Zombies and Humans, and allow for random contagion
+- Humans are faster than zombies
+- [optional] consider a time period for humans to turn into zombies
+
+By the end you should have a box full of red and yellow thingies. As a red and a yellow thingy touch, the yellow one becomes re
+
+### Step 4: Make Zombies smart so they can target prey
+- find the closest tasty human
+- redirect accordingly
+
+By the end you should have a box full of zombies and humans. The humans (yellow) go bouncing off in linear fashion. The zombies curve their trajectories and pursue the humans.
+
+### Step 5: Make Humans smart so they can run away
+
+## Some ideas:
+
+- zombies
+- toddler contagion vaccines kidergarden
+- cern
+- bubbles
