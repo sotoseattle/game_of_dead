@@ -41,6 +41,10 @@ class Human < Being
     @speed = 4
     super board, 'human.png'
   end
+
+  def turn_undead
+    Zombi.new(@board, {x:x, y:y, a:a})
+  end
 end
 
 class Zombi < Being
@@ -68,7 +72,7 @@ end
 class GameOfDead < Gosu::Window
   SCREEN_WIDE = 600
   SCREEN_HIGH = 700
-  SPREAD_RADIUS = 8
+  INFECT_DIST = 8
 
   attr_reader :humans, :zombis
 
@@ -83,7 +87,7 @@ class GameOfDead < Gosu::Window
   def update
     if @go_on
       tick     # everybody runs!
-      tock     # some people become zombies
+      tock     # some people were born to turn (into zombies)
     end
   end
 
@@ -94,11 +98,11 @@ class GameOfDead < Gosu::Window
 
   def tock
     new_zombis, survivors = @humans.partition do |h|
-      @zombis.find{|z| Gosu.distance(h.x, h.y, z.x, z.y) < SPREAD_RADIUS}
+      @zombis.find{ |z| Gosu.distance(h.x, h.y, z.x, z.y) < INFECT_DIST }
     end
 
     @humans = survivors
-    @zombis += new_zombis.map { |z| Zombi.new(self, {x:z.x, y:z.y, a:z.a}) }
+    @zombis += new_zombis.map(&:turn_undead)
 
     @go_on = false if @humans.none?
   end
