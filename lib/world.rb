@@ -98,7 +98,7 @@ class Zombi < Being
     distance, snacks = @board.humans
                              .group_by{ |h| Gosu.distance(x, y, h.x, h.y) }
                              .min_by{ |distance, human_group| distance }
-    return nil unless distance || distance < VISUAL_RADIUS
+    return nil unless distance && distance < VISUAL_RADIUS
 
     target = snacks.first
     target.bitten if distance < INFECT_DIST
