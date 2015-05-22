@@ -32,12 +32,12 @@ By the end you should have a box full of red and yellow thingies. As a red and a
 By the end you should have a box full of zombies and humans. The humans (yellow) go bouncing off in linear fashion. The zombies curve their trajectories and pursue the humans.
 
 ### Step 5: Make Humans smart so they can run away
-- zombies and humans have two states: out-there and freaky.
-  - Out there behavior is random walk.
-  - Freaky is running in pursuit
+- zombies and humans have two states: oblivious and freaky.
+  - oblivious humans/zombies go random walk
+  - Freaky is running in pursuit / pursued
 - zombies and humans only see prey/predator inside a certain radius
-- if no prey/predator in radius, they are out-there. Otherwise, freaky
-- [optional] seriously consider an algorithm to make it run efficiently
+- if no prey/predator in radius, they are oblivious. Otherwise, freaky
+- [optional] seriously consider an algorithm to make it run efficiently for large numbers
 
 ## Some ideas:
 

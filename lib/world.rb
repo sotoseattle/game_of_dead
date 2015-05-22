@@ -14,81 +14,105 @@ class Being < Gosu::Image
   end
 
   def update
-    velo = compute_speed
-    new_x = @x + velo[:x]
-    new_y = @y + velo[:y]
+    @x, @y = verify_inside *new_coordinates
+  end
 
-    @a = 180-@a if new_x + @wide/2 > @board.width  || new_x - @wide/2 < 0
-    @a = 360-@a if new_y + @high/2 > @board.height || new_y - @high/2 < 0
+  def new_coordinates direction=@a
+    @a = direction % 360
+    rads = @a * Math::PI / 180.0
+    [@x + @speed * Math.cos(rads), @y + @speed * Math.sin(rads)]
+  end
 
-    @x += velo[:x]
-    @y += velo[:y]
+  def verify_inside new_x, new_y
+    new_direction = nil
+    new_direction = 180 - @a if new_x + @wide/2 >= @board.width  || new_x - @wide/2 < 0
+    new_direction = 360 - @a if new_y + @high/2 >= @board.height || new_y - @high/2 < 0
+    return new_coordinates(new_direction) if new_direction
+    [new_x, new_y]
   end
 
   def draw
     super(@x - @wide/2, @y - @high/2, 1)
   end
-
-  def compute_speed
-    @a = @a % 360
-    rads = @a * Math::PI / 180.0
-    { x: @speed * Math.cos(rads), y: @speed * Math.sin(rads) }
-  end
 end
 
 class Human < Being
+  OBLIVI = 2
+  FREAKY = 4
+  VISUAL_RADIUS = 25
+
   def initialize board
-    @speed = 4
-    super board, 'human.png'
+    super board, 'lib/human.png'
+  end
+
+  def update
+    if (danger = closest_predator)
+      @a = Gosu.angle(danger.x, danger.y, x, y) - 90
+      @speed = Human::FREAKY
+    else
+      @speed = Human::OBLIVI
+    end
+    super
   end
 
   def turn_undead
     Zombi.new(@board, {x:x, y:y, a:a})
   end
+
+  def closest_predator
+    distance, predators = @board.zombis
+                                .group_by{ |z| Gosu.distance(x, y, z.x, z.y) }
+                                .min_by{ |distance, zombie_group| distance }
+    distance < VISUAL_RADIUS ? predators.first : nil
+  end
 end
 
 class Zombi < Being
-  VISUAL_RADIUS = 20
+  OBLIVI = 1
+  FREAKY = 3
+  VISUAL_RADIUS = 50
 
   def initialize board, opts = {}
-    @speed = 2
-    super board, 'zombi.png', opts
+    super board, 'lib/zombi.png', opts
   end
 
   def update
-    target = closest_prey
-    rads = Math.atan2((target.y - y), (target.x - x))
-    @a = (rads * 180 / Math::PI) % 360
+    if (target = closest_prey)
+      @a = Gosu.angle(target.x, target.y, x, y) + 90
+      @speed = Zombi::FREAKY
+    else
+      @speed = Zombi::OBLIVI
+    end
     super
   end
 
   def closest_prey
-    @board.humans
-          .group_by { |h| Gosu.distance(x, y, h.x, h.y) }
-          .min_by{|k,v| k}[1].first
+    distance, snacks = @board.humans
+                             .group_by{ |h| Gosu.distance(x, y, h.x, h.y) }
+                             .min_by{ |distance, human_group| distance }
+    distance < VISUAL_RADIUS ? snacks.first : nil
   end
 end
 
 class GameOfDead < Gosu::Window
-  SCREEN_WIDE = 600
-  SCREEN_HIGH = 700
+  DEFAULT_SETUP = { z: 1, h: 1 }
+  SCREEN_WIDE = 500
+  SCREEN_HIGH = 600
   INFECT_DIST = 8
 
   attr_reader :humans, :zombis
 
-  def initialize
+  def initialize opts={}
     super SCREEN_WIDE, SCREEN_HIGH, false
-    self.caption = "Contagion!!"
-    @humans = Array.new(200){ Human.new(self) }
-    @zombis = Array.new(1) { Zombi.new(self) }
-    @go_on = true
+    self.caption = "Zombies!!"
+    opts = DEFAULT_SETUP.merge opts
+    @humans = Array.new(opts[:h]){ Human.new(self) }
+    @zombis = Array.new(opts[:z]) { Zombi.new(self) }
   end
 
   def update
-    if @go_on
-      tick     # everybody runs!
-      tock     # some people were born to turn (into zombies)
-    end
+    tick     # everybody runs!
+    tock     # some people were born to turn (into zombies)
   end
 
   def tick
@@ -103,8 +127,6 @@ class GameOfDead < Gosu::Window
 
     @humans = survivors
     @zombis += new_zombis.map(&:turn_undead)
-
-    @go_on = false if @humans.none?
   end
 
   def draw
@@ -113,5 +135,3 @@ class GameOfDead < Gosu::Window
   end
 end
 
-window = GameOfDead.new
-window.show
