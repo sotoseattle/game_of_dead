@@ -3,7 +3,7 @@ STEPS:
 
 ### Step 0: Install Gosu or RSDL/ZenThingy
 
-### Step 1: Basic movement of Being
+### Step 1: Basic movement of a Thingy
 - two dimensional linear movement in x, y
 - velocity is added to location at every update of the clock
 - consider always differentiating between x and y (for velocity too)
@@ -13,7 +13,7 @@ STEPS:
 By the end you should have a box full of things shooting off out of the screen in linear fashion
 
 ### Step 2: Enclose in world and make it bounce the walls
-- a being cannot pass beyond the walls of the defined world
+- a thingy cannot pass beyond the walls of the defined world
 - [optional] consider the angle at which it bounces off
 
 By the end you should have a box full of bouncing thingies (like browning motion without the collisions)
@@ -27,10 +27,17 @@ By the end you should have a box full of red and yellow thingies. As a red and a
 ### Step 4: Make Zombies smart so they can target prey
 - find the closest tasty human
 - redirect accordingly
+- [optional] consider an algorithm to make the finding more efficient (and so you can use millions of thingies)
 
 By the end you should have a box full of zombies and humans. The humans (yellow) go bouncing off in linear fashion. The zombies curve their trajectories and pursue the humans.
 
 ### Step 5: Make Humans smart so they can run away
+- zombies and humans have two states: out-there and freaky.
+  - Out there behavior is random walk.
+  - Freaky is running in pursuit
+- zombies and humans only see prey/predator inside a certain radius
+- if no prey/predator in radius, they are out-there. Otherwise, freaky
+- [optional] seriously consider an algorithm to make it run efficiently
 
 ## Some ideas:
 
