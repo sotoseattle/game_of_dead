@@ -67,10 +67,9 @@ class Human < Being
   end
 
   def closest_predator
-    distance, predators = @board.zombis
-                                .group_by{ |z| Gosu.distance(x, y, z.x, z.y) }
-                                .min_by{ |distance, zombie_group| distance }
-    distance < VISUAL_RADIUS ? predators.first : nil
+    predator = @board.zombis.sort_by{ |z| Gosu.distance(x, y, z.x, z.y) }.first
+    distance = Gosu.distance(x, y, predator.x, predator.y)
+    distance < VISUAL_RADIUS ? predator : nil
   end
 end
 
@@ -95,12 +94,10 @@ class Zombi < Being
   end
 
   def closest_prey
-    distance, snacks = @board.humans
-                             .group_by{ |h| Gosu.distance(x, y, h.x, h.y) }
-                             .min_by{ |distance, human_group| distance }
-    return nil unless distance && distance < VISUAL_RADIUS
+    target = @board.humans.sort_by{ |h| Gosu.distance(x, y, h.x, h.y) }.first
+    distance = Gosu.distance(x, y, target.x, target.y)
 
-    target = snacks.first
+    return nil unless distance < VISUAL_RADIUS
     target.bitten if distance < INFECT_DIST
     target
   end
