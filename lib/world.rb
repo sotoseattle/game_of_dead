@@ -94,6 +94,7 @@ class Zombi < Being
   end
 
   def closest_prey
+    return nil if @board.humans.none?
     target = @board.humans.sort_by{ |h| Gosu.distance(x, y, h.x, h.y) }.first
     distance = Gosu.distance(x, y, target.x, target.y)
 
