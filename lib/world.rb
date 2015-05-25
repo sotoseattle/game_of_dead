@@ -24,11 +24,23 @@ class Being < Gosu::Image
   end
 
   def verify_inside new_x, new_y
-    new_direction = nil
-    new_direction = 180 - @a if new_x + @wide/2 >= @board.width  || new_x - @wide/2 < 0
-    new_direction = 360 - @a if new_y + @high/2 >= @board.height || new_y - @high/2 < 0
-    return new_coordinates(new_direction) if new_direction
-    [new_x, new_y]
+    if x_outbound?(new_x) && y_outbound?(new_y)
+      new_coordinates @a - 180
+    elsif x_outbound?(new_x)
+      new_coordinates 180 - @a
+    elsif y_outbound?(new_y)
+      new_coordinates 360 - @a
+    else
+      [new_x, new_y]
+    end
+  end
+
+  def x_outbound? a
+    a > @board.width  || a < 0
+  end
+
+  def y_outbound? b
+    b > @board.height || b < 0
   end
 
   def draw
@@ -94,13 +106,13 @@ class Zombi < Being
   end
 
   def closest_prey
-    return nil if @board.humans.none?
-    target = @board.humans.sort_by{ |h| Gosu.distance(x, y, h.x, h.y) }.first
-    distance = Gosu.distance(x, y, target.x, target.y)
-
-    return nil unless distance < VISUAL_RADIUS
-    target.bitten if distance < INFECT_DIST
-    target
+    sorted = @board.humans.sort_by{ |h| Gosu.distance(x, y, h.x, h.y) }
+    guy = sorted.shift
+    while guy && Gosu.distance(x, y, guy.x, guy.y) <= INFECT_DIST do
+      guy.bitten
+      guy = sorted.shift
+    end
+    guy
   end
 end
 
@@ -117,6 +129,7 @@ class GameOfDead < Gosu::Window
     opts = DEFAULT_SETUP.merge opts
     @humans = Array.new(opts[:h]){ Human.new(self) }
     @zombis = Array.new(opts[:z]) { Zombi.new(self) }
+    @font = Gosu::Font.new(self, 'system', 30)
   end
 
   def update
@@ -130,6 +143,8 @@ class GameOfDead < Gosu::Window
   def draw
     @humans.each(&:draw)
     @zombis.each(&:draw)
+    @font.draw(@humans.count.to_s, 20, 20, 2)
+    @font.draw(@zombis.count.to_s, SCREEN_WIDE - 60, 20, 2, 1, 1, color = Gosu::Color::RED)
   end
 end
 
