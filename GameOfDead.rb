@@ -2,5 +2,6 @@
 
 require './lib/world.rb'
 
-window = GameOfDead.new h: 200, z: 5
+window = GameOfDead.new n: 20
+
 window.show

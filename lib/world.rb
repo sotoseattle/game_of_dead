@@ -48,103 +48,45 @@ class Being < Gosu::Image
   end
 end
 
-class Human < Being
+class Ball < Being
   attr_reader :infected
 
-  OBLIVI = 2
-  FREAKY = 4
-  VISUAL_RADIUS = 25
+  SPEED = 4
 
   def initialize board
-    super board, 'lib/human.png'
-    @infected = false
+    super board, 'lib/ball.png'
+    @speed = Ball::SPEED
   end
 
   def update
-    if (danger = closest_predator)
-      @a = Gosu.angle(danger.x, danger.y, x, y) - 90
-      @speed = Human::FREAKY
-    else
-      @speed = Human::OBLIVI
-    end
     super
   end
 
-  def bitten
-    @infected = true
-  end
-
-  def turn_undead
-    Zombi.new(@board, {x:x, y:y, a:a})
-  end
-
-  def closest_predator
-    predator = @board.zombis.sort_by{ |z| Gosu.distance(x, y, z.x, z.y) }.first
-    distance = Gosu.distance(x, y, predator.x, predator.y)
-    distance < VISUAL_RADIUS ? predator : nil
-  end
-end
-
-class Zombi < Being
-  OBLIVI = 1
-  FREAKY = 3
-  VISUAL_RADIUS = 50
-  INFECT_DIST = 8
-
-  def initialize board, opts = {}
-    super board, 'lib/zombi.png', opts
-  end
-
-  def update
-    if (target = closest_prey)
-      @a = Gosu.angle(target.x, target.y, x, y) + 90
-      @speed = Zombi::FREAKY
-    else
-      @speed = Zombi::OBLIVI
-    end
-    super
-  end
-
-  def closest_prey
-    sorted = @board.humans.sort_by{ |h| Gosu.distance(x, y, h.x, h.y) }
-    guy = sorted.shift
-    while guy && Gosu.distance(x, y, guy.x, guy.y) <= INFECT_DIST do
-      guy.bitten
-      guy = sorted.shift
-    end
-    guy
-  end
 end
 
 class GameOfDead < Gosu::Window
-  attr_reader :humans, :zombis
+  attr_reader :balls
 
-  DEFAULT_SETUP = { z: 1, h: 1 }
+  DEFAULT_SETUP = { n: 1 }
   SCREEN_WIDE = 500
   SCREEN_HIGH = 600
 
   def initialize opts={}
     super SCREEN_WIDE, SCREEN_HIGH, false
-    self.caption = "Zombies!!"
+    self.caption = "Freeaaaaakkyy!!"
     opts = DEFAULT_SETUP.merge opts
-    @humans = Array.new(opts[:h]){ Human.new(self) }
-    @zombis = Array.new(opts[:z]) { Zombi.new(self) }
+    @balls = Array.new(opts[:n]){ Ball.new(self) }
     @font = Gosu::Font.new(self, 'system', 30)
   end
 
   def update
-    @humans.each(&:update)
-    @zombis.each(&:update)
-
-    bitten, @humans = @humans.partition(&:infected)
-    @zombis += bitten.map &:turn_undead
+    @balls.each(&:update)
   end
 
   def draw
-    @humans.each(&:draw)
-    @zombis.each(&:draw)
-    @font.draw(@humans.count.to_s, 20, 20, 2)
-    @font.draw(@zombis.count.to_s, SCREEN_WIDE - 60, 20, 2, 1, 1, color = Gosu::Color::RED)
+    @balls.each(&:draw)
+    # @font.draw(@balls.count.to_s, 20, 20, 2)
+    @font.draw(Gosu.fps.to_s, 20, 20, 2)
   end
 end
 
