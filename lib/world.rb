@@ -18,21 +18,19 @@ class Vector
 end
 
 class Ball < Gosu::Image
-  SPEED = 4
-
   def initialize board, opts={}
     super board, 'lib/ball.png', false
-    @wide = 8
-    @high = 8
+    @wide  = 8
+    @high  = 8
     @board = board
-    @speed = Ball::SPEED
-    @vect = Vector.new({ x: rand(0...@board.width),
-                         y: rand(0...@board.height)})
+    @speed = 4
+    @vecto = Vector.new({ x: rand(0...@board.width),
+                          y: rand(0...@board.height)})
   end
 
   def update
-    @vect.mag = @speed
-    @vect.x, @vect.y = verify_inside *@vect.end_point
+    @vecto.mag = @speed
+    @vecto.x, @vecto.y = verify_inside *@vecto.end_point
   end
 
   def verify_inside new_x, new_y
@@ -41,30 +39,27 @@ class Ball < Gosu::Image
 
     return [new_x, new_y] if !bad_x && !bad_y
 
-    @vect.ang = case
-      when bad_x && bad_y then @vect.ang - 180
-      when bad_x          then 180 - @vect.ang
-      when bad_y          then 360 - @vect.ang
+    @vecto.ang = case
+      when bad_x && bad_y then @vecto.ang - 180
+      when bad_x          then 180 - @vecto.ang
+      when bad_y          then 360 - @vecto.ang
     end
 
-    @vect.end_point
+    @vecto.end_point
   end
 
   def draw
-    super(@vect.x - @wide/2, @vect.y - @high/2, 1)
+    super(@vecto.x - @wide/2, @vecto.y - @high/2, 1)
   end
 end
 
 class GameOfDead < Gosu::Window
-  DEFAULT_SETUP = { n: 1 }
-  SCREEN_WIDE = 500
-  SCREEN_HIGH = 600
+  SCREEN_WIDE, SCREEN_HIGH = 500, 600
 
-  def initialize opts={}
+  def initialize n=1
     super SCREEN_WIDE, SCREEN_HIGH, false
     self.caption = "Freeaaaaakkyy!!"
-    opts = DEFAULT_SETUP.merge opts
-    @balls = Array.new(opts[:n]){ Ball.new(self) }
+    @balls = Array.new(n){ Ball.new(self) }
     @font = Gosu::Font.new(self, 'system', 30)
   end
 
