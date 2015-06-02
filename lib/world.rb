@@ -10,10 +10,6 @@ class Vector
     @mag = opts[:m] || 0.0
   end
 
-  def start_point
-    [@x, @y]
-  end
-
   def end_point
     @ang = @ang % 360
     rads = @ang * Math::PI / 180.0
@@ -21,14 +17,15 @@ class Vector
   end
 end
 
-class Being < Gosu::Image
-  attr_reader :x, :y, :a
+class Ball < Gosu::Image
+  SPEED = 4
 
-  def initialize board, file, opts={}
-    super board, file, false
+  def initialize board, opts={}
+    super board, 'lib/ball.png', false
     @wide = 8
     @high = 8
     @board = board
+    @speed = Ball::SPEED
     @vect = Vector.new({ x: rand(0...@board.width),
                          y: rand(0...@board.height)})
   end
@@ -58,24 +55,7 @@ class Being < Gosu::Image
   end
 end
 
-class Ball < Being
-  attr_reader :infected
-
-  SPEED = 4
-
-  def initialize board
-    super board, 'lib/ball.png'
-    @speed = Ball::SPEED
-  end
-
-  def update
-    super
-  end
-end
-
 class GameOfDead < Gosu::Window
-  attr_reader :balls
-
   DEFAULT_SETUP = { n: 1 }
   SCREEN_WIDE = 500
   SCREEN_HIGH = 600
