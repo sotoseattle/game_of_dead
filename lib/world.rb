@@ -1,50 +1,60 @@
 require 'gosu'
 
+class Vector
+  attr_accessor :x, :y, :ang, :mag
+
+  def initialize opts={}
+    @x   = opts[:x] || 0.0
+    @y   = opts[:y] || 0.0
+    @ang = opts[:a] || rand(0...360)
+    @mag = opts[:m] || 0.0
+  end
+
+  def start_point
+    [@x, @y]
+  end
+
+  def end_point
+    @ang = @ang % 360
+    rads = @ang * Math::PI / 180.0
+    [@x + @mag * Math.cos(rads), @y + @mag * Math.sin(rads)]
+  end
+end
+
 class Being < Gosu::Image
   attr_reader :x, :y, :a
 
   def initialize board, file, opts={}
     super board, file, false
-    @board = board
-    @x = opts[:x] || rand(0...@board.width)
-    @y = opts[:y] || rand(0...@board.height)
-    @a = opts[:a] || rand(0...360)
     @wide = 8
     @high = 8
+    @board = board
+    @vect = Vector.new({ x: rand(0...@board.width),
+                         y: rand(0...@board.height)})
   end
 
   def update
-    @x, @y = verify_inside *new_coordinates
-  end
-
-  def new_coordinates direction=@a
-    @a = direction % 360
-    rads = @a * Math::PI / 180.0
-    [@x + @speed * Math.cos(rads), @y + @speed * Math.sin(rads)]
+    @vect.mag = @speed
+    @vect.x, @vect.y = verify_inside *@vect.end_point
   end
 
   def verify_inside new_x, new_y
-    if x_outbound?(new_x) && y_outbound?(new_y)
-      new_coordinates @a - 180
-    elsif x_outbound?(new_x)
-      new_coordinates 180 - @a
-    elsif y_outbound?(new_y)
-      new_coordinates 360 - @a
-    else
-      [new_x, new_y]
+    bad_x = new_x > @board.width  || new_x < 0
+    bad_y = new_y > @board.height || new_y < 0
+
+    return [new_x, new_y] if !bad_x && !bad_y
+
+    @vect.ang = case
+      when bad_x && bad_y then @vect.ang - 180
+      when bad_x          then 180 - @vect.ang
+      when bad_y          then 360 - @vect.ang
     end
-  end
 
-  def x_outbound? a
-    a > @board.width  || a < 0
-  end
-
-  def y_outbound? b
-    b > @board.height || b < 0
+    @vect.end_point
   end
 
   def draw
-    super(@x - @wide/2, @y - @high/2, 1)
+    super(@vect.x - @wide/2, @vect.y - @high/2, 1)
   end
 end
 
@@ -61,7 +71,6 @@ class Ball < Being
   def update
     super
   end
-
 end
 
 class GameOfDead < Gosu::Window
@@ -85,7 +94,6 @@ class GameOfDead < Gosu::Window
 
   def draw
     @balls.each(&:draw)
-    # @font.draw(@balls.count.to_s, 20, 20, 2)
     @font.draw(Gosu.fps.to_s, 20, 20, 2)
   end
 end
