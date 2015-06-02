@@ -30,51 +30,70 @@ class Vector
   end
 
   def + v2
-    v2.start_point= end_point ##########################
+    v2.start_point= end_point
     new_x, new_y = v2.end_point
     new_a = Gosu.angle(@x, @y, new_x, new_y) - 90
-    new_m = Math.sqrt((new_x-@x)**2 + (new_y-@y)**2)
+    new_m = Gosu.distance(@x, @y, new_x, new_y)
     Vector.new x: @x, y: @y, a: new_a, m: new_m
   end
 end
 
 class Ball < Gosu::Image
   attr_reader :vecto
+  DRAG = 1.8
+  GRAV = Vector.new a: 90, m: 0.8
 
   def initialize board, opts={}
     super board, 'lib/ball.png', false
     @wide = @high = 8
-    @board = board
-    @speed = 2
-    @vecto = Vector.new x: rand(0...@board.width),
-                        y: rand(0...@board.height),
+    @vecto = Vector.new x: rand(0...board.width),
+                        y: rand(0...board.height),
                         m: 4
+    @border = { south: Vector.new(y: board.height, a: 270),
+              north: Vector.new(y: 0, a: 90),
+              east:  Vector.new(x: 0, a: 0),
+              west:  Vector.new(x: board.width, a: 180) }
   end
 
   def update
-    bounce_off_walls
+    apply_gravity
+    confine_inside
     @vecto.start_point = @vecto.end_point
   end
 
-  def bounce_off_walls
+  def apply_gravity
+    @vecto = @vecto + GRAV
+  end
+
+  def confine_inside
     ex, ey = @vecto.end_point
-    inside_x_limits = ex.between?(0, @board.width)
-    inside_y_limits = ey.between?(0, @board.height)
+    outside_x_limits = [ex < 0, ex > @border[:west].x]
+    outside_y_limits = [ey < 0, ey > @border[:south].y]
 
-    return if inside_x_limits && inside_y_limits
+    return if (outside_x_limits + outside_y_limits).none?
 
-    case
-      when not(inside_x_limits) && not(inside_y_limits)
-        reaction_ang = @vecto.ang - 180
-        reaction_mag = 2 * @vecto.mag.abs
-      when not(inside_x_limits)
-        reaction_ang = (ex < 0 ? 0 : 180)
-        reaction_mag = 2 * @vecto.comp_x.abs
-      when not(inside_y_limits)
-        reaction_ang = (ey < 0 ? 90 : 270)
-        reaction_mag = 2 * @vecto.comp_y.abs
+    walls = []
+    if outside_x_limits.any?
+      w = outside_x_limits.first ? @border[:east].dup : @border[:west].dup
+      w.mag = DRAG * @vecto.comp_x.abs
+      walls << w
     end
-    @vecto = @vecto + Vector.new(a: reaction_ang, m: reaction_mag)
+
+    if outside_y_limits.any?
+      w = outside_y_limits.first ? @border[:north].dup : @border[:south].dup
+      w.mag = DRAG * @vecto.comp_y.abs
+      walls << w
+    end
+
+    bounce walls
+  end
+
+  def bounce vectors
+    vectors.each do |w|
+      w.x ||= @vecto.x
+      w.y ||= @vecto.y
+      @vecto += w
+    end
   end
 
   def draw
