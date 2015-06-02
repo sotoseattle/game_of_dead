@@ -15,37 +15,39 @@ class Vector
     rads = @ang * Math::PI / 180.0
     [@x + @mag * Math.cos(rads), @y + @mag * Math.sin(rads)]
   end
+
+  def start_point= location
+    @x, @y = *location
+  end
 end
 
 class Ball < Gosu::Image
   def initialize board, opts={}
     super board, 'lib/ball.png', false
-    @wide  = 8
-    @high  = 8
+    @wide = @high = 8
     @board = board
     @speed = 4
     @vecto = Vector.new({ x: rand(0...@board.width),
-                          y: rand(0...@board.height)})
+                          y: rand(0...@board.height),
+                          m: 4})
   end
 
   def update
-    @vecto.mag = @speed
-    @vecto.x, @vecto.y = verify_inside *@vecto.end_point
+    bounce_off_walls
+    @vecto.start_point = @vecto.end_point
   end
 
-  def verify_inside new_x, new_y
-    bad_x = new_x > @board.width  || new_x < 0
-    bad_y = new_y > @board.height || new_y < 0
+  def bounce_off_walls
+    bad_x = @vecto.x > @board.width  || @vecto.x < 0
+    bad_y = @vecto.y > @board.height || @vecto.y < 0
 
-    return [new_x, new_y] if !bad_x && !bad_y
+    return if !bad_x && !bad_y
 
     @vecto.ang = case
       when bad_x && bad_y then @vecto.ang - 180
       when bad_x          then 180 - @vecto.ang
       when bad_y          then 360 - @vecto.ang
     end
-
-    @vecto.end_point
   end
 
   def draw
@@ -72,4 +74,3 @@ class GameOfDead < Gosu::Window
     @font.draw(Gosu.fps.to_s, 20, 20, 2)
   end
 end
-
