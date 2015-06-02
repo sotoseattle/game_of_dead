@@ -4,32 +4,51 @@ class Vector
   attr_accessor :x, :y, :ang, :mag
 
   def initialize opts={}
-    @x   = opts[:x] || 0.0
-    @y   = opts[:y] || 0.0
+    @x   = opts[:x] || nil
+    @y   = opts[:y] || nil
     @ang = opts[:a] || rand(0...360)
     @mag = opts[:m] || 0.0
   end
 
   def end_point
     @ang = @ang % 360
-    rads = @ang * Math::PI / 180.0
-    [@x + @mag * Math.cos(rads), @y + @mag * Math.sin(rads)]
+    [@x + comp_x, @y + comp_y]
   end
 
   def start_point= location
     @x, @y = *location
   end
+
+  def comp_x
+    rads = @ang * Math::PI / 180.0
+    @mag * Math.cos(rads)
+  end
+
+  def comp_y
+    rads = @ang * Math::PI / 180.0
+    @mag * Math.sin(rads)
+  end
+
+  def + v2
+    v2.start_point= end_point ##########################
+    new_x, new_y = v2.end_point
+    new_a = Gosu.angle(@x, @y, new_x, new_y) - 90
+    new_m = Math.sqrt((new_x-@x)**2 + (new_y-@y)**2)
+    Vector.new x: @x, y: @y, a: new_a, m: new_m
+  end
 end
 
 class Ball < Gosu::Image
+  attr_reader :vecto
+
   def initialize board, opts={}
     super board, 'lib/ball.png', false
     @wide = @high = 8
     @board = board
-    @speed = 4
-    @vecto = Vector.new({ x: rand(0...@board.width),
-                          y: rand(0...@board.height),
-                          m: 4})
+    @speed = 2
+    @vecto = Vector.new x: rand(0...@board.width),
+                        y: rand(0...@board.height),
+                        m: 4
   end
 
   def update
@@ -38,16 +57,24 @@ class Ball < Gosu::Image
   end
 
   def bounce_off_walls
-    bad_x = @vecto.x > @board.width  || @vecto.x < 0
-    bad_y = @vecto.y > @board.height || @vecto.y < 0
+    ex, ey = @vecto.end_point
+    inside_x_limits = ex.between?(0, @board.width)
+    inside_y_limits = ey.between?(0, @board.height)
 
-    return if !bad_x && !bad_y
+    return if inside_x_limits && inside_y_limits
 
-    @vecto.ang = case
-      when bad_x && bad_y then @vecto.ang - 180
-      when bad_x          then 180 - @vecto.ang
-      when bad_y          then 360 - @vecto.ang
+    case
+      when not(inside_x_limits) && not(inside_y_limits)
+        reaction_ang = @vecto.ang - 180
+        reaction_mag = 2 * @vecto.mag.abs
+      when not(inside_x_limits)
+        reaction_ang = (ex < 0 ? 0 : 180)
+        reaction_mag = 2 * @vecto.comp_x.abs
+      when not(inside_y_limits)
+        reaction_ang = (ey < 0 ? 90 : 270)
+        reaction_mag = 2 * @vecto.comp_y.abs
     end
+    @vecto = @vecto + Vector.new(a: reaction_ang, m: reaction_mag)
   end
 
   def draw
@@ -56,6 +83,7 @@ class Ball < Gosu::Image
 end
 
 class GameOfDead < Gosu::Window
+  attr_reader :balls
   SCREEN_WIDE, SCREEN_HIGH = 500, 600
 
   def initialize n=1
@@ -72,5 +100,9 @@ class GameOfDead < Gosu::Window
   def draw
     @balls.each(&:draw)
     @font.draw(Gosu.fps.to_s, 20, 20, 2)
+  end
+
+  def button_down(id)
+    close if id == Gosu::KbEscape
   end
 end
